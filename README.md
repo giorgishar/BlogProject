@@ -1,4 +1,4 @@
-# Python102
+# Python102 (Final Projects)
 
 1. დაკლონეთ რეპოზიტორია 
     - **git clone "link"**
