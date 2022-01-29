@@ -1,3 +1,13 @@
+# database
+*.sqlite3
+*.db
+
+# django
+media/
+
+.idea/
+.vscode/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
