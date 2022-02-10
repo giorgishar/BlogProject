@@ -1,10 +1,12 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect
-from .models import Post, Comment
+from .models import Feedback, Post, Comment
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from .forms import CommentForm
 from django.urls import reverse
+
+
 
 class AccessMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
@@ -37,6 +39,7 @@ class PostListView(ListView):
     template_name = 'blogapp/home.html'
     context_object_name = 'posts'
     ordering = ['-date_posted']
+    paginate_by = 2
 
 class PostDetailView(DetailView):
     model = Post
@@ -62,7 +65,7 @@ class PostDetailView(DetailView):
         context = super().get_context_data(**kwargs)
 
         post = Post.objects.filter(id=self.kwargs['pk'])[0]
-        comments = post.comment_set.all()
+        comments = Post.comment_set.all()
 
         context['post'] = post
         context['comments'] = comments
@@ -88,19 +91,19 @@ class PostDetailView(DetailView):
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
 
-        likes_connected = get_object_or_404(Post, id=self.kwargs['pk'])
-        liked = False
-        if likes_connected.likes.filter(id=self.request.user.id).exists():
-            liked = True
-        data['number_of_likes'] = likes_connected.number_of_likes()
-        data['post_is_liked'] = liked
+        post: Post = self.object
+        feedbacks = post.feedbacks.all()
+        data['number_of_likes'] = len(feedbacks.filter(feedback__status=1))
+        data['dislikes'] = len(feedbacks.filter(feedback__status=0))
+
+        data['post_is_liked'] = self.request.user in feedbacks
         return data
 
 # -------------------------------------------------------------
 
 class PostCreateView(LoginRequiredMixin, CreateView):
     model = Post
-    fields = ["title", "content"]
+    fields = ["title", "content", 'tags']
 
     def form_valid(self, form):
         form.instance.author = self.request.user
@@ -109,7 +112,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
 
 class PostUpdateView(AccessMixin, UpdateView):
     model = Post
-    fields = ["title", "content"]
+    fields = ["title", "content", 'tags']
 
     def form_valid(self, form):
         form.instance.author = self.request.user

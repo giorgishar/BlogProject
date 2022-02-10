@@ -4,13 +4,33 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from django.urls import reverse
 from users.models import Profile
+from taggit.managers import TaggableManager
+
+
+
+class Feedback(models.Model):
+    STATUSES = (
+        (0, 'Unlike'),
+        (1, 'Like'),
+        (2, 'None')
+        )
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    post = models.ForeignKey('blogapp.Post', on_delete=models.CASCADE)
+    status = models.IntegerField(choices=STATUSES)
+
+    class Meta:
+        unique_together = ['user', 'post']
+    
+
+
 
 class Post(models.Model):
     title = models.CharField(max_length=100)
     content = models.TextField()
     date_posted = models.DateTimeField(default=timezone.now)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
-    likes = models.ManyToManyField(User, related_name="blog_posts")
+    feedbacks = models.ManyToManyField(User, related_name='feedbacks', through=Feedback)
+    tags = TaggableManager()
     
     def __str__(self):
         return self.title
